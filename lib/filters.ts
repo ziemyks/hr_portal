@@ -133,3 +133,18 @@ export function dashToAdsQuery(d: DashFilters, extra: Partial<AdFilters> = {}) {
     ...extra,
   });
 }
+
+/** Dashboard filters expressed as ad-list filters (all statuses), e.g. for facet counts. */
+export function dashAsAdFilters(d: DashFilters): AdFilters {
+  return {
+    ...EMPTY_FILTERS,
+    status: "all",
+    from: d.from,
+    to: d.to,
+    cat: d.cat ? [d.cat] : [],
+    sub: d.sub ? [d.sub] : [],
+    sen: d.sen ? [d.sen] : [],
+    town: d.town ? [d.town] : [],
+    mode: d.mode ? [d.mode] : [],
+  };
+}

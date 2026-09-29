@@ -8,11 +8,11 @@ import { MultiSelect, type Option } from "./multi-select";
 import { Button, buttonClass } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { activeFilterCount, toQuery, type AdFilters, type MultiKey, type Sort, type Status } from "@/lib/filters";
-import { catLabel, langLabel, SENIORITY, SENIORITY_ORDER, WORK_MODE } from "@/lib/labels";
+import { activeFilterCount, MULTI_KEYS, toQuery, type AdFilters, type MultiKey, type Sort, type Status } from "@/lib/filters";
+import { catLabel, label, langLabel, SENIORITY, WORK_MODE } from "@/lib/labels";
 import { saveView } from "@/lib/storage";
 import { date, num } from "@/lib/format";
-import type { Facets } from "@/lib/types";
+import type { FacetCounts } from "@/lib/facets";
 import { cn } from "@/lib/utils";
 
 const SORT_LABELS: Record<Sort, string> = {
@@ -31,11 +31,13 @@ const STATUS_TABS: { key: Status; label: string }[] = [
 
 export function AdFilters({
   filters,
-  facets,
+  facetCounts,
+  skillLabels,
   counts,
 }: {
   filters: AdFilters;
-  facets: Facets;
+  facetCounts: FacetCounts;
+  skillLabels: Record<string, string>;
   counts: { active: number; inactive: number; all: number };
 }) {
   const router = useRouter();
@@ -58,16 +60,20 @@ export function AdFilters({
   }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => setQ(filters.q), [filters.q]);
 
-  const opts = {
-    cat: (facets.main_categories ?? []).map((c) => ({ value: c.value, label: catLabel(c.value), n: c.n })),
-    sub: facets.categories.map((c) => ({ value: c.value, label: catLabel(c.value), n: c.n })),
-    company: facets.companies.map((c) => ({ value: c.value, label: c.value, n: c.n })),
-    town: facets.towns.map((c) => ({ value: c.value, label: c.value, n: c.n })),
-    mode: Object.keys(WORK_MODE).filter((k) => k !== "UNKNOWN").map((k) => ({ value: k, label: WORK_MODE[k] })),
-    sen: SENIORITY_ORDER.map((k) => ({ value: k, label: SENIORITY[k] })),
-    skill: facets.skills.map((s) => ({ value: s.value, label: s.label ?? s.value, n: s.n })),
-    lang: facets.languages.map((l) => ({ value: l.value, label: langLabel(l.value), n: l.n })),
-  } satisfies Record<MultiKey, Option[]>;
+  // Options = values still available under the other filters, most frequent first.
+  const labelOf: Record<MultiKey, (v: string) => string> = {
+    cat: catLabel,
+    sub: catLabel,
+    company: (v) => v,
+    town: (v) => v,
+    mode: (v) => label(WORK_MODE, v),
+    sen: (v) => label(SENIORITY, v),
+    skill: (v) => skillLabels[v] ?? v,
+    lang: langLabel,
+  };
+  const opts = Object.fromEntries(
+    MULTI_KEYS.map((k) => [k, facetCounts[k].map((o) => ({ value: o.value, label: labelOf[k](o.value), n: o.n }))]),
+  ) as Record<MultiKey, Option[]>;
 
   const MULTI: { key: MultiKey; label: string }[] = [
     { key: "cat", label: "Kategorija" },

@@ -9,16 +9,16 @@ import { StatTile } from "@/components/dashboard/stat-tile";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader } from "@/components/ui/card";
-import { dashToAdsQuery, parseDashFilters, type DashFilters } from "@/lib/filters";
+import { dashAsAdFilters, dashToAdsQuery, parseDashFilters, type DashFilters } from "@/lib/filters";
 import { date, dateTime, num, pct, relDays, salary } from "@/lib/format";
 import { AD_FORMAT, catLabel, label, langLabel, SENIORITY, SENIORITY_ORDER, WORK_MODE, WORK_TIME } from "@/lib/labels";
-import { getDashboard, getFacets } from "@/lib/queries";
+import { getDashboard, getListFacets } from "@/lib/queries";
 import { companyHref } from "@/lib/links";
 import type { AdFilters } from "@/lib/filters";
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const f = parseDashFilters(await searchParams);
-  const [d, facets] = await Promise.all([getDashboard(f), getFacets()]);
+  const [d, facetCounts] = await Promise.all([getDashboard(f), getListFacets(dashAsAdFilters(f))]);
   const k = d.kpi;
   const ads = (extra: Partial<AdFilters> = {}) => `/ads${dashToAdsQuery(f, extra)}`;
 
@@ -35,7 +35,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           </>
         }
       />
-      <DashFiltersBar filters={f} towns={facets.towns.slice(0, 40)} categories={facets.main_categories ?? []} subcategories={facets.categories} />
+      <DashFiltersBar filters={f} facetCounts={facetCounts} />
 
       {k.total === 0 ? (
         <Card className="p-10 text-center text-sm text-fg-muted">Izvēlētajiem filtriem nav datu.</Card>

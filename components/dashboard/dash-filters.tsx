@@ -6,8 +6,9 @@ import { ArrowRight } from "lucide-react";
 import { buttonClass } from "@/components/ui/button";
 import { Select } from "@/components/ui/input";
 import { dashToAdsQuery, type DashFilters } from "@/lib/filters";
-import { catLabel, SENIORITY, SENIORITY_ORDER, WORK_MODE } from "@/lib/labels";
-import type { Facet } from "@/lib/types";
+import { catLabel, label, SENIORITY, WORK_MODE } from "@/lib/labels";
+import type { FacetCounts } from "@/lib/facets";
+import type { MultiKey } from "@/lib/filters";
 import { cn } from "@/lib/utils";
 
 function daysAgo(n: number) {
@@ -22,7 +23,25 @@ const RANGES = [
   { key: "30", label: "30 d.", from: 30 },
 ];
 
-export function DashFiltersBar({ filters, towns, categories, subcategories }: { filters: DashFilters; towns: Facet[]; categories: Facet[]; subcategories: Facet[] }) {
+type SelectKey = "cat" | "sub" | "sen" | "town" | "mode";
+const FACET_KEY: Record<SelectKey, MultiKey> = { cat: "cat", sub: "sub", sen: "sen", town: "town", mode: "mode" };
+const SELECTS: { key: SelectKey; label: string; all: string; width?: string }[] = [
+  { key: "cat", label: "Kategorija", all: "Visas kategorijas" },
+  { key: "sub", label: "Apakškategorija", all: "Visas apakškategorijas", width: "max-w-52" },
+  { key: "sen", label: "Līmenis", all: "Visi līmeņi" },
+  { key: "town", label: "Pilsēta", all: "Visas pilsētas", width: "max-w-44" },
+  { key: "mode", label: "Darba veids", all: "Jebkurš darba veids" },
+];
+const labelOf: Record<SelectKey, (v: string) => string> = {
+  cat: catLabel,
+  sub: catLabel,
+  sen: (v) => label(SENIORITY, v),
+  town: (v) => v,
+  mode: (v) => label(WORK_MODE, v),
+};
+
+/** Each select lists only values available under the other filters, most frequent first. */
+export function DashFiltersBar({ filters, facetCounts }: { filters: DashFilters; facetCounts: FacetCounts }) {
   const router = useRouter();
   const push = (patch: Partial<DashFilters>) => {
     const f = { ...filters, ...patch };
@@ -51,26 +70,25 @@ export function DashFiltersBar({ filters, towns, categories, subcategories }: { 
           </button>
         ))}
       </div>
-      <Select aria-label="Kategorija" value={filters.cat ?? ""} onChange={(e) => push({ cat: e.target.value || null })} className="h-8 w-auto text-[13px]">
-        <option value="">Visas kategorijas</option>
-        {categories.map((c) => <option key={c.value} value={c.value}>{catLabel(c.value)} ({c.n})</option>)}
-      </Select>
-      <Select aria-label="Apakškategorija" value={filters.sub ?? ""} onChange={(e) => push({ sub: e.target.value || null })} className="h-8 w-auto max-w-52 text-[13px]">
-        <option value="">Visas apakškategorijas</option>
-        {subcategories.map((c) => <option key={c.value} value={c.value}>{catLabel(c.value)} ({c.n})</option>)}
-      </Select>
-      <Select aria-label="Līmenis" value={filters.sen ?? ""} onChange={(e) => push({ sen: e.target.value || null })} className="h-8 w-auto text-[13px]">
-        <option value="">Visi līmeņi</option>
-        {SENIORITY_ORDER.map((k) => <option key={k} value={k}>{SENIORITY[k]}</option>)}
-      </Select>
-      <Select aria-label="Pilsēta" value={filters.town ?? ""} onChange={(e) => push({ town: e.target.value || null })} className="h-8 w-auto max-w-44 text-[13px]">
-        <option value="">Visas pilsētas</option>
-        {towns.map((t) => <option key={t.value} value={t.value}>{t.value} ({t.n})</option>)}
-      </Select>
-      <Select aria-label="Darba veids" value={filters.mode ?? ""} onChange={(e) => push({ mode: e.target.value || null })} className="h-8 w-auto text-[13px]">
-        <option value="">Jebkurš darba veids</option>
-        {["ON_SITE", "HYBRID", "FULLY_REMOTE"].map((k) => <option key={k} value={k}>{WORK_MODE[k]}</option>)}
-      </Select>
+      {SELECTS.map(({ key, label: l, all, width }) => {
+        const selected = filters[key];
+        return (
+          <Select
+            key={key}
+            aria-label={l}
+            value={selected ?? ""}
+            onChange={(e) => push({ [key]: e.target.value || null })}
+            className={cn("h-8 w-auto text-[13px]", width)}
+          >
+            <option value="">{all}</option>
+            {facetCounts[FACET_KEY[key]].map((o) => (
+              <option key={o.value} value={o.value}>
+                {labelOf[key](o.value)} ({o.n})
+              </option>
+            ))}
+          </Select>
+        );
+      })}
       {(filters.cat || filters.sub || filters.sen || filters.town || filters.mode || filters.from) && (
         <Link href="/" scroll={false} className="px-1 text-xs font-medium text-accent hover:underline">Notīrīt</Link>
       )}

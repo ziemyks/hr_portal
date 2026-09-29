@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "./supabase.server";
-import { MAIN_CATEGORIES, PAGE_SIZE, type AdFilters, type DashFilters, type Status } from "./filters";
+import { computeFacets, FACET_COLUMNS, type FacetRow } from "./facets";
+import { MAIN_CATEGORIES, MULTI_KEYS, PAGE_SIZE, type AdFilters, type DashFilters, type Status } from "./filters";
 import {
   LIST_COLUMNS,
   type CompanyProfile,
@@ -192,4 +193,22 @@ export async function getCompanyProfile(company: string) {
   const { data, error } = await db().rpc("company_profile", { p_company: company });
   if (error) fail("getCompanyProfile", error);
   return data as CompanyProfile | null;
+}
+
+/**
+ * Option counts for every list filter under the current selection (each facet ignores
+ * its own selection). Base rows = status, search, salary, repeat and date filters.
+ */
+export async function getListFacets(f: AdFilters) {
+  const base: AdFilters = { ...f, ...Object.fromEntries(MULTI_KEYS.map((k) => [k, []])) };
+  const rows: FacetRow[] = [];
+  for (let start = 0; start < 20000; start += 1000) {
+    let query = db().from(VIEW).select(FACET_COLUMNS);
+    query = applyFilters(query, base);
+    const { data, error } = await query.order("id").range(start, start + 999);
+    if (error) fail("getListFacets", error);
+    rows.push(...((data ?? []) as unknown as FacetRow[]));
+    if (!data || data.length < 1000) break;
+  }
+  return computeFacets(rows, f);
 }
