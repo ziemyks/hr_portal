@@ -12,6 +12,7 @@ import { buttonClass } from "@/components/ui/button";
 import { basisLabel, date, dateTime, relDays, salary } from "@/lib/format";
 import { AD_FORMAT, catLabel, isRecruiter, label, langLabel, SENIORITY, WORK_MODE, WORK_TIME } from "@/lib/labels";
 import type { Listing, ListingRow, SimilarListing } from "@/lib/types";
+import { companyHref } from "@/lib/links";
 import { cn } from "@/lib/utils";
 
 const PAGE_TEXT_TITLES = ["Lapas teksts (zīmola lapa)"];
@@ -48,7 +49,7 @@ export function AdHeader({ ad, compact }: { ad: Listing; compact?: boolean }) {
       <div>
         <h1 className={cn("font-semibold leading-tight tracking-tight", compact ? "text-lg" : "text-2xl")}>{ad.title}</h1>
         <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-fg-muted">
-          <Link href={`/ads?status=all&company=${encodeURIComponent(ad.company)}`} className="font-medium hover:text-accent hover:underline">
+          <Link href={companyHref(ad.company)} className="font-medium hover:text-accent hover:underline" title="Uzņēmuma analīze">
             {ad.company}
           </Link>
           {recruiter && <Badge tone="neutral" title="Sludinājumu publicējusi personāla atlases aģentūra; īstais darba devējs var būt minēts tekstā">aģentūra</Badge>}
@@ -378,8 +379,8 @@ export function CompanyAds({ company, items }: { company: string; items: Listing
       title={`Citi ${company} sludinājumi`}
       icon={<Building2 />}
       aside={
-        <Link href={`/ads?status=all&company=${encodeURIComponent(company)}`} className="text-xs text-accent hover:underline">
-          Visi
+        <Link href={companyHref(company)} className="text-xs text-accent hover:underline">
+          Uzņēmuma analīze
         </Link>
       }
     >

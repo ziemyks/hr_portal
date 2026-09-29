@@ -185,3 +185,57 @@ export type Dashboard = {
   }[];
   most_viewed: { id: string; title: string; company: string; views: number; views_per_day: number }[];
 };
+
+// ---- Company analysis (sql/002_company_views.sql) ----
+
+export type CompanyRow = {
+  company: string;
+  n: number;
+  n_active: number;
+  median_salary: number | null;
+  avg_days_open: number | null;
+  n_repeating: number;
+  first_seen: string | null;
+  last_posted: string | null;
+  main_category: string | null;
+  recruiter: boolean;
+};
+
+/** A mix item: company share next to the market share (both in %). */
+export type MixItem = { key: string; n: number; pct: number; market_pct: number };
+
+export type CompanyProfile = {
+  company: string;
+  generated_at: string;
+  recruiter: boolean;
+  kpi: {
+    total: number; active: number; inactive: number;
+    market_total: number; market_active: number; companies_total: number; rank_active: number;
+    first_seen: string | null; last_posted: string | null; new_30d: number;
+    median_salary: number | null; market_median_salary: number | null; salary_n: number;
+    avg_days_open: number | null; market_avg_days_open: number | null;
+    repeating: number; market_repeating_pct: number | null;
+    avg_views: number | null; market_avg_views: number | null;
+    avg_experience: number | null; market_avg_experience: number | null;
+    hourly_ads: number;
+  };
+  weekly: { week: string; n: number }[];
+  open_by_day: { day: string; n: number }[];
+  skills: (MixItem & { label: string })[];
+  seniority: MixItem[];
+  work_mode: MixItem[];
+  languages: MixItem[];
+  categories: KeyN[];
+  towns: KeyN[];
+  salary_by_seniority: {
+    key: string; n: number; median: number | null; min: number | null; max: number | null;
+    market_median: number | null; market_n: number | null;
+  }[];
+  benefit_themes: (MixItem & { label: string })[];
+  benefits_top: { text: string; n: number }[];
+  roles: { title: string; n: number; active: number; latest: string | null }[];
+  experience: { stated: number; total: number; education_stated: number };
+  ad_format: KeyN[];
+  apply_channel: { own: number; cvlv: number };
+  competitors: { company: string; similarity: number; shared_skills: string[]; n: number; n_active: number }[];
+};

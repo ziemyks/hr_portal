@@ -3,6 +3,8 @@ import { db } from "./supabase.server";
 import { PAGE_SIZE, type AdFilters, type DashFilters, type Status } from "./filters";
 import {
   LIST_COLUMNS,
+  type CompanyProfile,
+  type CompanyRow,
   type Dashboard,
   type Facets,
   type Listing,
@@ -174,4 +176,16 @@ export async function searchAds(term: string, limit = 8) {
     .limit(limit);
   if (error) fail("searchAds", error);
   return (data ?? []) as Pick<Listing, "id" | "title" | "company" | "is_active" | "town">[];
+}
+
+export async function getCompanyList() {
+  const { data, error } = await db().rpc("company_list");
+  if (error) fail("getCompanyList", error);
+  return (data ?? []) as CompanyRow[];
+}
+
+export async function getCompanyProfile(company: string) {
+  const { data, error } = await db().rpc("company_profile", { p_company: company });
+  if (error) fail("getCompanyProfile", error);
+  return data as CompanyProfile | null;
 }

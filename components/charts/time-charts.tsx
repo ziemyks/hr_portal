@@ -130,3 +130,20 @@ export function WeeklyNewChart({ data }: { data: { week: string; category: strin
     </div>
   );
 }
+
+/** Single series weekly columns (company postings). */
+export function WeeklyBars({ data, name = "Jauni sludinājumi" }: { data: { week: string; n: number }[]; name?: string }) {
+  return (
+    <div className="h-56">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} margin={{ top: 4, right: 8, left: -12, bottom: 0 }} barCategoryGap="28%">
+          <CartesianGrid vertical={false} stroke="var(--chart-grid)" />
+          <XAxis dataKey="week" {...axis} tickFormatter={shortDate} minTickGap={16} />
+          <YAxis {...axis} axisLine={false} allowDecimals={false} width={48} />
+          <Tooltip content={<Tip title={(w) => `Nedēļa no ${longDate(w)}`} />} cursor={{ fill: "var(--surface-2)" }} />
+          <Bar dataKey="n" name={name} fill="var(--chart-1)" maxBarSize={24} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}

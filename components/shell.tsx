@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import {
-  Bookmark, ChevronsLeft, ChevronsRight, LayoutDashboard, List, LogOut, Menu, Monitor, Moon, Search, Star, Sun, X,
+  Bookmark, Building2, ChevronsLeft, ChevronsRight, LayoutDashboard, List, LogOut, Menu, Monitor, Moon, Search, Star, Sun, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/storage";
@@ -16,6 +16,7 @@ import { Tooltip } from "@/components/ui/tooltip";
 const NAV = [
   { href: "/", label: "Pārskats", icon: LayoutDashboard },
   { href: "/ads", label: "Sludinājumi", icon: List },
+  { href: "/companies", label: "Uzņēmumi", icon: Building2 },
   { href: "/favourites", label: "Izlase", icon: Star },
 ];
 

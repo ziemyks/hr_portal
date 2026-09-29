@@ -13,6 +13,7 @@ import { dashToAdsQuery, parseDashFilters, type DashFilters } from "@/lib/filter
 import { date, dateTime, num, pct, relDays, salary } from "@/lib/format";
 import { AD_FORMAT, catLabel, label, langLabel, SENIORITY, SENIORITY_ORDER, WORK_MODE, WORK_TIME } from "@/lib/labels";
 import { getDashboard, getFacets } from "@/lib/queries";
+import { companyHref } from "@/lib/links";
 import type { AdFilters } from "@/lib/filters";
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -144,7 +145,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
 
           <div className="grid gap-5 lg:grid-cols-2">
             <Card>
-              <CardHeader title="Aktīvākie darba devēji" description="Pēc aktīvo sludinājumu skaita" />
+              <CardHeader title="Aktīvākie darba devēji" description="Pēc aktīvo sludinājumu skaita" action={<Link href="/companies" className="text-xs text-accent hover:underline">Visi uzņēmumi</Link>} />
               <div className="overflow-x-auto p-4 pt-2">
                 <table className="w-full text-[13px]">
                   <thead>
@@ -158,7 +159,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
                     {d.companies.map((c) => (
                       <tr key={c.key} className="border-b border-border last:border-0">
                         <td className="py-2 pr-2">
-                          <Link href={`/ads?status=all&company=${encodeURIComponent(c.key)}`} className="hover:text-accent hover:underline">{c.key}</Link>
+                          <Link href={companyHref(c.key)} className="hover:text-accent hover:underline">{c.key}</Link>
                           {c.recruiter && <Badge className="ml-1.5" title="Atlases aģentūra – publicē citu uzņēmumu vārdā">aģentūra</Badge>}
                         </td>
                         <td className="py-2 text-right font-medium tabular-nums">{num(c.n_active)}</td>

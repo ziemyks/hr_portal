@@ -9,6 +9,7 @@ import { adsByIdsAction, paletteFacetsAction, searchAdsAction } from "@/app/acti
 import { useCommand } from "@/components/providers";
 import { Dialog } from "@/components/ui/dialog";
 import { Kbd } from "@/components/ui/kbd";
+import { companyHref } from "@/lib/links";
 import { useStore } from "@/lib/storage";
 import type { Facet } from "@/lib/types";
 
@@ -117,7 +118,7 @@ export function CommandMenu() {
           {companyHits.length > 0 && (
             <Command.Group heading="Uzņēmumi" className={groupCls}>
               {companyHits.map((c) => (
-                <Command.Item key={c.value} value={`co-${c.value}`} onSelect={() => go(`/ads?status=all&company=${encodeURIComponent(c.value)}`)} className={itemCls}>
+                <Command.Item key={c.value} value={`co-${c.value}`} onSelect={() => go(companyHref(c.value))} className={itemCls}>
                   <Building2 />
                   <span className="flex-1 truncate">{c.value}</span>
                   <span className="text-xs tabular-nums text-fg-subtle">{c.n}</span>
@@ -174,6 +175,9 @@ export function CommandMenu() {
                 </Command.Item>
                 <Command.Item value="nav-ads" onSelect={() => go("/ads")} className={itemCls}>
                   <List /> Sludinājumi
+                </Command.Item>
+                <Command.Item value="nav-co" onSelect={() => go("/companies")} className={itemCls}>
+                  <Building2 /> Uzņēmumi
                 </Command.Item>
                 <Command.Item value="nav-fav" onSelect={() => go("/favourites")} className={itemCls}>
                   <Star /> Izlase

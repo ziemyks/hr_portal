@@ -9,9 +9,10 @@ the browser only talks to the Next.js server, behind one shared password.
 
 ## Setup
 
-1. **Database**: run [sql/001_portal_views.sql](sql/001_portal_views.sql) in the Supabase SQL editor.
-   It adds the `blt.listings_portal` view, `blt.skill_labels`, the RPCs `portal_facets`,
-   `dashboard_stats` and `similar_listings`, and two indexes. It is idempotent: re-run it after every change to the file.
+1. **Database**: run these in the Supabase SQL editor, in order. Both are idempotent: re-run them after every change.
+   - [sql/001_portal_views.sql](sql/001_portal_views.sql): `blt.listings_portal` view, `blt.skill_labels`,
+     RPCs `portal_facets`, `dashboard_stats` and `similar_listings`, plus two indexes.
+   - [sql/002_company_views.sql](sql/002_company_views.sql): RPCs `company_list` and `company_profile` (company analysis).
 2. **Env**: `cp .env.example .env.local` and fill in:
 
    | Variable | Value |
@@ -39,6 +40,7 @@ on any Node 20+ host.
 | `app/(portal)/page.tsx` | Dashboard (one `dashboard_stats` RPC call) |
 | `app/(portal)/ads/page.tsx` | Ad list: filters live in the URL (`lib/filters.ts`) |
 | `app/(portal)/ads/[id]/page.tsx` | Full ad page |
+| `app/(portal)/companies/…` | Company list and profile (`/companies/profile?name=…`); every metric is compared with the market |
 | `app/(portal)/@drawer/(.)ads/[id]` | Same ad as a side panel when opened from a list (intercepting route) |
 | `lib/queries.ts` | All data access (server-only) |
 | `lib/auth.ts`, `middleware.ts` | Password gate (HMAC-signed cookie, 30 days) |
