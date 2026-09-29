@@ -22,7 +22,7 @@ const RANGES = [
   { key: "30", label: "30 d.", from: 30 },
 ];
 
-export function DashFiltersBar({ filters, towns, categories }: { filters: DashFilters; towns: Facet[]; categories: Facet[] }) {
+export function DashFiltersBar({ filters, towns, categories, subcategories }: { filters: DashFilters; towns: Facet[]; categories: Facet[]; subcategories: Facet[] }) {
   const router = useRouter();
   const push = (patch: Partial<DashFilters>) => {
     const f = { ...filters, ...patch };
@@ -55,6 +55,10 @@ export function DashFiltersBar({ filters, towns, categories }: { filters: DashFi
         <option value="">Visas kategorijas</option>
         {categories.map((c) => <option key={c.value} value={c.value}>{catLabel(c.value)} ({c.n})</option>)}
       </Select>
+      <Select aria-label="Apakškategorija" value={filters.sub ?? ""} onChange={(e) => push({ sub: e.target.value || null })} className="h-8 w-auto max-w-52 text-[13px]">
+        <option value="">Visas apakškategorijas</option>
+        {subcategories.map((c) => <option key={c.value} value={c.value}>{catLabel(c.value)} ({c.n})</option>)}
+      </Select>
       <Select aria-label="Līmenis" value={filters.sen ?? ""} onChange={(e) => push({ sen: e.target.value || null })} className="h-8 w-auto text-[13px]">
         <option value="">Visi līmeņi</option>
         {SENIORITY_ORDER.map((k) => <option key={k} value={k}>{SENIORITY[k]}</option>)}
@@ -67,7 +71,7 @@ export function DashFiltersBar({ filters, towns, categories }: { filters: DashFi
         <option value="">Jebkurš darba veids</option>
         {["ON_SITE", "HYBRID", "FULLY_REMOTE"].map((k) => <option key={k} value={k}>{WORK_MODE[k]}</option>)}
       </Select>
-      {(filters.cat || filters.sen || filters.town || filters.mode || filters.from) && (
+      {(filters.cat || filters.sub || filters.sen || filters.town || filters.mode || filters.from) && (
         <Link href="/" scroll={false} className="px-1 text-xs font-medium text-accent hover:underline">Notīrīt</Link>
       )}
       <Link href={`/ads${dashToAdsQuery(filters)}`} className={buttonClass("outline", "sm", "ml-auto")}>

@@ -135,6 +135,9 @@ export type Facets = {
   towns: Facet[];
   skills: Facet[];
   languages: Facet[];
+  /** `category` column values */
+  main_categories: Facet[];
+  /** full cv.lv category list (subcategories) */
   categories: Facet[];
 };
 

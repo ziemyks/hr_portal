@@ -35,7 +35,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
           </>
         }
       />
-      <DashFiltersBar filters={f} towns={facets.towns.slice(0, 40)} categories={facets.categories} />
+      <DashFiltersBar filters={f} towns={facets.towns.slice(0, 40)} categories={facets.main_categories ?? []} subcategories={facets.categories} />
 
       {k.total === 0 ? (
         <Card className="p-10 text-center text-sm text-fg-muted">Izvēlētajiem filtriem nav datu.</Card>
@@ -124,8 +124,8 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             <MiniCard title="Pilsētas">
               <BarList items={d.towns.slice(0, 8).map((r) => ({ key: r.key, label: r.key === "—" ? "Nav norādīta / ārzemes" : r.key, n: r.n, href: r.key !== "—" ? ads({ status: "all", town: [r.key] }) : undefined }))} />
             </MiniCard>
-            <MiniCard title="Visas cv.lv kategorijas" note="Sludinājumam var būt vairākas · % no sludinājumiem">
-              <BarList total={k.total} items={d.categories_all.slice(0, 8).map((r) => ({ key: r.key, label: catLabel(r.key), n: r.n, href: ads({ status: "all", cat: [r.key] }) }))} />
+            <MiniCard title="Apakškategorijas" note="Pilns cv.lv kategoriju saraksts; sludinājumam var būt vairākas · % no sludinājumiem">
+              <BarList total={k.total} items={d.categories_all.slice(0, 8).map((r) => ({ key: r.key, label: catLabel(r.key), n: r.n, href: ads({ status: "all", sub: [r.key] }) }))} />
             </MiniCard>
             <MiniCard title="Slodze" note="% no sludinājumiem">
               <BarList total={k.total} items={d.work_times.slice(0, 7).map((r) => ({ key: r.key, label: label(WORK_TIME, r.key), n: r.n }))} />

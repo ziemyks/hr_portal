@@ -59,7 +59,8 @@ export function AdFilters({
   useEffect(() => setQ(filters.q), [filters.q]);
 
   const opts = {
-    cat: facets.categories.map((c) => ({ value: c.value, label: catLabel(c.value), n: c.n })),
+    cat: (facets.main_categories ?? []).map((c) => ({ value: c.value, label: catLabel(c.value), n: c.n })),
+    sub: facets.categories.map((c) => ({ value: c.value, label: catLabel(c.value), n: c.n })),
     company: facets.companies.map((c) => ({ value: c.value, label: c.value, n: c.n })),
     town: facets.towns.map((c) => ({ value: c.value, label: c.value, n: c.n })),
     mode: Object.keys(WORK_MODE).filter((k) => k !== "UNKNOWN").map((k) => ({ value: k, label: WORK_MODE[k] })),
@@ -70,6 +71,7 @@ export function AdFilters({
 
   const MULTI: { key: MultiKey; label: string }[] = [
     { key: "cat", label: "Kategorija" },
+    { key: "sub", label: "Apakškategorija" },
     { key: "company", label: "Uzņēmums" },
     { key: "town", label: "Pilsēta" },
     { key: "mode", label: "Darba veids" },

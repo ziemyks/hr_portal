@@ -123,6 +123,8 @@ set search_path = blt, extensions, public as $$
                   left join blt.skill_labels sl on sl.key = x.k),
     'languages', (select coalesce(jsonb_agg(jsonb_build_object('value', v, 'n', n) order by n desc, v), '[]')
                   from (select v, count(*) n from f, unnest(f.languages_norm) v group by 1) x),
+    'main_categories', (select coalesce(jsonb_agg(jsonb_build_object('value', category, 'n', n) order by n desc, category), '[]')
+                        from (select category, count(*) n from f group by 1) x),
     'categories',(select coalesce(jsonb_agg(jsonb_build_object('value', c, 'n', n) order by n desc, c), '[]')
                   from (select c, count(*) n from f, unnest(f.categories_all) c group by 1) x)
   )
@@ -130,8 +132,12 @@ $$;
 
 -- ---------------------------------------------------------------------------
 -- Dashboard: every widget in one call. Null parameters = no filter.
--- p_from/p_to filter by first_published_at.
+-- p_from/p_to filter by first_published_at; p_category = the category column,
+-- p_subcategory = any entry of the full cv.lv category list (categories_all).
 -- ---------------------------------------------------------------------------
+
+-- The old 6-argument signature would stay as an ambiguous overload; drop it.
+drop function if exists blt.dashboard_stats(date, date, text, text, text, text);
 
 create or replace function blt.dashboard_stats(
   p_from date default null,
@@ -139,7 +145,8 @@ create or replace function blt.dashboard_stats(
   p_category text default null,
   p_seniority text default null,
   p_town text default null,
-  p_work_mode text default null
+  p_work_mode text default null,
+  p_subcategory text default null
 )
 returns jsonb language sql stable
 set search_path = blt, extensions, public as $$
@@ -147,7 +154,8 @@ set search_path = blt, extensions, public as $$
     select * from blt.listings_portal lp
     where (p_from is null or lp.first_published_at >= p_from)
       and (p_to is null or lp.first_published_at <= p_to)
-      and (p_category is null or p_category = any(lp.categories_all))
+      and (p_category is null or lp.category = p_category)
+      and (p_subcategory is null or p_subcategory = any(lp.categories_all))
       and (p_seniority is null or lp.seniority = p_seniority)
       and (p_town is null or lp.town = p_town)
       and (p_work_mode is null or lp.work_mode = p_work_mode)
@@ -322,10 +330,10 @@ create index if not exists blt_listings_deadline_idx on blt.blt_listings (deadli
 -- ---------------------------------------------------------------------------
 
 revoke all on function blt.norm_skill_key(text), blt.norm_language(text), blt.norm_title(text),
-  blt.portal_facets(), blt.dashboard_stats(date, date, text, text, text, text),
+  blt.portal_facets(), blt.dashboard_stats(date, date, text, text, text, text, text),
   blt.similar_listings(text, int) from public, anon, authenticated;
 grant execute on function blt.norm_skill_key(text), blt.norm_language(text), blt.norm_title(text),
-  blt.portal_facets(), blt.dashboard_stats(date, date, text, text, text, text),
+  blt.portal_facets(), blt.dashboard_stats(date, date, text, text, text, text, text),
   blt.similar_listings(text, int) to service_role;
 grant select on blt.listings_portal, blt.skill_labels to service_role;
 

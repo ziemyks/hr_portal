@@ -40,7 +40,8 @@ function applyFilters<Q>(query: Q, f: AdFilters, status: Status = f.status): Q {
     if (/^\d{5,9}$/.test(term)) ors.push(`id.eq."cvlv:${term}"`);
     q = q.or(ors.join(","));
   }
-  if (f.cat.length) q = q.overlaps("categories_all", f.cat);
+  if (f.cat.length) q = q.in("category", f.cat);
+  if (f.sub.length) q = q.overlaps("categories_all", f.sub);
   if (f.company.length) q = q.in("company", f.company);
   if (f.town.length) q = q.in("town", f.town);
   if (f.mode.length) q = q.in("work_mode", f.mode);
@@ -156,7 +157,7 @@ export async function getFacets() {
 
 export async function getDashboard(d: DashFilters) {
   const { data, error } = await db().rpc("dashboard_stats", {
-    p_from: d.from, p_to: d.to, p_category: d.cat, p_seniority: d.sen, p_town: d.town, p_work_mode: d.mode,
+    p_from: d.from, p_to: d.to, p_category: d.cat, p_seniority: d.sen, p_town: d.town, p_work_mode: d.mode, p_subcategory: d.sub,
   });
   if (error) fail("getDashboard", error);
   return data as Dashboard;
