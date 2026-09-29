@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "./supabase.server";
-import { PAGE_SIZE, type AdFilters, type DashFilters, type Status } from "./filters";
+import { MAIN_CATEGORIES, PAGE_SIZE, type AdFilters, type DashFilters, type Status } from "./filters";
 import {
   LIST_COLUMNS,
   type CompanyProfile,
@@ -152,7 +152,10 @@ export async function getRepostChain(ad: Pick<Listing, "id" | "repost_root" | "t
 export async function getFacets() {
   const { data, error } = await db().rpc("portal_facets");
   if (error) fail("getFacets", error);
-  return data as Facets;
+  const f = data as Facets;
+  // Older SQL (before 001 was re-run) has no main_categories: derive them so the filter is never empty.
+  if (!f.main_categories?.length) f.main_categories = f.categories.filter((c) => MAIN_CATEGORIES.includes(c.value));
+  return f;
 }
 
 export async function getDashboard(d: DashFilters) {
