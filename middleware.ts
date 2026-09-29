@@ -15,6 +15,6 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Everything except the login page/endpoint and static assets.
-  matcher: ["/((?!login|api/login|_next/static|_next/image|favicon.ico|icon.svg|robots.txt).*)"],
+  // Everything except the login page/endpoint, static assets and Vercel Analytics (/_vercel/insights/*).
+  matcher: ["/((?!login|api/login|_next/static|_next/image|_vercel|favicon.ico|icon.svg|robots.txt).*)"],
 };
