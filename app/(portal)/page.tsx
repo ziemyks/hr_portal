@@ -45,7 +45,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             <div className="col-span-2 md:col-span-1">
               <StatTile hero label="Aktīvie sludinājumi" value={num(k.active)} sub={`no ${num(k.total)} kopā · ${num(k.companies_active)} uzņēmumi`} href={ads({ status: "active" })} />
             </div>
-            <StatTile label="Jauni pēdējās 7 d." value={num(k.new_7d)} delta={{ value: k.new_7d - k.new_prev_7d, label: "pret iepr. 7 d." }} href={ads({ status: "all", sort: "new" })} />
+            <StatTile label="Jauni pēdējās 7 d." value={num(k.new_7d)} delta={{ value: k.new_7d - k.new_prev_7d, label: "pret iepr. 7 d." }} href={ads({ status: "all", sort: "new", recent: 7 })} />
             <StatTile label="Beidzas 7 dienās" value={num(k.closing_soon)} sub="pieteikšanās termiņš" href={ads({ sort: "deadline" })} />
             <StatTile label="Atkārtoti (aktīvie)" value={`${pct(k.repeating_active, k.active)}%`} sub={`${num(k.repeating_active)} – grūtāk aizpildāmi`} href={ads({ rep: true, sort: "open" })} />
             <StatTile label="Mediānā alga (aktīvie)" value={k.median_salary_active != null ? `€ ${num(k.median_salary_active)}` : "—"} sub="/mēn. bruto, diapazona vidus" />

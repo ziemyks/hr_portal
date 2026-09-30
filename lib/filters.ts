@@ -19,6 +19,8 @@ export type AdFilters = {
   smin: number | null;
   smax: number | null;
   rep: boolean;
+  /** Relative period: first published within the last N days (kept relative in saved views). */
+  recent: number | null;
   from: string | null;
   to: string | null;
   sort: Sort;
@@ -40,6 +42,9 @@ function getAll(p: Params, k: string): string[] {
 const get1 = (p: Params, k: string) => getAll(p, k)[0] ?? null;
 const isDate = (v: string | null) => (v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
 const toNum = (v: string | null) => (v && /^\d+(\.\d+)?$/.test(v) ? Number(v) : null);
+
+/** Allowed values of the "Publicēts" quick filter (days). */
+export const RECENT_DAYS = [1, 3, 7, 14, 30];
 
 /** Values of the `category` column (the two searched cv.lv categories, dictionary §3.1). */
 export const MAIN_CATEGORIES = ["INFORMATION_TECHNOLOGY", "BANKING_INSURANCE"];
@@ -66,6 +71,7 @@ export function parseFilters(p: Params): AdFilters {
     smin: toNum(get1(p, "smin")),
     smax: toNum(get1(p, "smax")),
     rep: get1(p, "rep") === "1",
+    recent: RECENT_DAYS.includes(Number(get1(p, "new"))) ? Number(get1(p, "new")) : null,
     from: isDate(get1(p, "from")),
     to: isDate(get1(p, "to")),
     sort: (["new", "salary", "deadline", "open", "views"] as const).includes(sort as Sort) ? (sort as Sort) : "new",
@@ -82,6 +88,7 @@ export function toQuery(f: Partial<AdFilters>): string {
   if (f.smin != null) u.set("smin", String(f.smin));
   if (f.smax != null) u.set("smax", String(f.smax));
   if (f.rep) u.set("rep", "1");
+  if (f.recent) u.set("new", String(f.recent));
   if (f.from) u.set("from", f.from);
   if (f.to) u.set("to", f.to);
   if (f.sort && f.sort !== "new") u.set("sort", f.sort);
@@ -96,7 +103,7 @@ export function activeFilterCount(f: AdFilters) {
   return (
     MULTI_KEYS.reduce((n, k) => n + f[k].length, 0) +
     (f.q ? 1 : 0) + (f.smin != null ? 1 : 0) + (f.smax != null ? 1 : 0) +
-    (f.rep ? 1 : 0) + (f.from ? 1 : 0) + (f.to ? 1 : 0)
+    (f.rep ? 1 : 0) + (f.recent ? 1 : 0) + (f.from ? 1 : 0) + (f.to ? 1 : 0)
   );
 }
 

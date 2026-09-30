@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "./supabase.server";
+import { addDays, todayRiga } from "./format";
 import { computeFacets, FACET_COLUMNS, type FacetRow } from "./facets";
 import { MAIN_CATEGORIES, MULTI_KEYS, PAGE_SIZE, type AdFilters, type DashFilters, type Status } from "./filters";
 import {
@@ -52,6 +53,8 @@ function applyFilters<Q>(query: Q, f: AdFilters, status: Status = f.status): Q {
   if (f.smin != null) q = q.gte("salary_mid_monthly", f.smin);
   if (f.smax != null) q = q.lte("salary_mid_monthly", f.smax);
   if (f.rep) q = q.eq("is_repeating", true);
+  // "last N days" incl. today (Riga calendar), same window as the dashboard's "new in 7 days".
+  if (f.recent) q = q.gte("first_published_at", addDays(todayRiga(), -(f.recent - 1)));
   if (f.from) q = q.gte("first_published_at", f.from);
   if (f.to) q = q.lte("first_published_at", f.to);
   return q as unknown as Q;

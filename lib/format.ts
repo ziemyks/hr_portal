@@ -45,6 +45,13 @@ export function todayRiga() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(new Date());
 }
 
+/** YYYY-MM-DD shifted by n calendar days. */
+export function addDays(ymd: string, n: number) {
+  const d = new Date(`${ymd}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
 export function daysBetween(a: string, b: string) {
   return Math.round((toDate(b).getTime() - toDate(a).getTime()) / 86400000);
 }

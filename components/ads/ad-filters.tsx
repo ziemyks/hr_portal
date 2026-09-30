@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { BookmarkPlus, Download, Repeat, Search, SlidersHorizontal, X } from "lucide-react";
+import { BookmarkPlus, CalendarClock, Check, ChevronDown, Download, Repeat, Search, SlidersHorizontal, X } from "lucide-react";
 import { MultiSelect, type Option } from "./multi-select";
 import { Button, buttonClass } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { activeFilterCount, MULTI_KEYS, toQuery, type AdFilters, type MultiKey, type Sort, type Status } from "@/lib/filters";
+import { activeFilterCount, MULTI_KEYS, RECENT_DAYS, toQuery, type AdFilters, type MultiKey, type Sort, type Status } from "@/lib/filters";
 import { catLabel, label, langLabel, SENIORITY, WORK_MODE } from "@/lib/labels";
 import { saveView } from "@/lib/storage";
 import { date, num } from "@/lib/format";
@@ -96,6 +96,7 @@ export function AdFilters({
   if (filters.smin != null) chips.push({ id: "smin", text: `Alga ≥ € ${num(filters.smin)}`, clear: { smin: null } });
   if (filters.smax != null) chips.push({ id: "smax", text: `Alga ≤ € ${num(filters.smax)}`, clear: { smax: null } });
   if (filters.rep) chips.push({ id: "rep", text: "Tikai atkārtotie", clear: { rep: false } });
+  if (filters.recent) chips.push({ id: "new", text: `Publicēts pēdējās ${recentLabel(filters.recent)}`, clear: { recent: null } });
   if (filters.from) chips.push({ id: "from", text: `Publicēts no ${date(filters.from)}`, clear: { from: null } });
   if (filters.to) chips.push({ id: "to", text: `Publicēts līdz ${date(filters.to)}`, clear: { to: null } });
 
@@ -164,6 +165,7 @@ export function AdFilters({
         >
           <Repeat className="size-3.5" /> Atkārtotie
         </button>
+        <RecentFilter value={filters.recent} onChange={(recent) => push({ recent })} />
         <MoreFilters filters={filters} onApply={push} count={extraCount} />
       </div>
 
@@ -284,6 +286,55 @@ function SaveViewButton({ query }: { query: string }) {
             </div>
           </form>
         )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+const recentLabel = (d: number) => (d === 1 ? "24 h" : `${d} dienās`);
+
+/** Quick "published in the last N days" filter (relative, so saved views stay current). */
+function RecentFilter({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
+  const [open, setOpen] = useState(false);
+  const opts: { v: number | null; text: string }[] = [
+    { v: null, text: "Jebkad" },
+    ...RECENT_DAYS.map((d) => ({ v: d, text: d === 1 ? "Pēdējās 24 h" : `Pēdējās ${d} dienās` })),
+  ];
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        className={cn(
+          "inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-[13px] font-medium transition-colors",
+          value ? "border-accent/40 bg-accent-soft text-accent" : "border-dashed border-border-strong text-fg-muted hover:border-solid hover:text-fg",
+        )}
+      >
+        <CalendarClock className="size-3.5" />
+        {value ? `Publicēts: ${value === 1 ? "24 h" : `${value} d.`}` : "Publicēts"}
+        <ChevronDown className="size-3.5 opacity-60" />
+      </PopoverTrigger>
+      <PopoverContent className="w-52">
+        <ul role="listbox" aria-label="Publicēts">
+          {opts.map((o) => {
+            const on = o.v === value;
+            return (
+              <li key={o.text}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={on}
+                  onClick={() => {
+                    setOpen(false);
+                    onChange(o.v);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] text-fg-muted hover:bg-surface-2 hover:text-fg"
+                >
+                  <span className="flex size-4 items-center justify-center">{on && <Check className="size-3.5 text-accent" />}</span>
+                  {o.text}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
       </PopoverContent>
     </Popover>
   );
