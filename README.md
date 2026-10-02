@@ -9,10 +9,12 @@ the browser only talks to the Next.js server, behind one shared password.
 
 ## Setup
 
-1. **Database**: run these in the Supabase SQL editor, in order. Both are idempotent: re-run them after every change.
+1. **Database**: run these in the Supabase SQL editor, in order. All are idempotent: re-run them after every change.
    - [sql/001_portal_views.sql](sql/001_portal_views.sql): `blt.listings_portal` view, `blt.skill_labels`,
      RPCs `portal_facets`, `dashboard_stats` and `similar_listings`, plus two indexes.
    - [sql/002_company_views.sql](sql/002_company_views.sql): RPCs `company_list` and `company_profile` (company analysis).
+   - [sql/003_login_limit.sql](sql/003_login_limit.sql): `blt.login_attempts` table and RPCs `login_attempt` / `login_succeeded`
+     (login brute-force limit: 5 failures per IP per 15 min, 30 failures overall per hour; tuned in `app/api/login/route.ts`).
 2. **Env**: `cp .env.example .env.local` and fill in:
 
    | Variable | Value |

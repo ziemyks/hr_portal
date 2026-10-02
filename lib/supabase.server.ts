@@ -9,6 +9,17 @@ export const REVALIDATE_SECONDS = 900;
 const CACHE_VERSION = process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.VERCEL_DEPLOYMENT_ID ?? "local";
 
 let client: SupabaseClient<any, "blt"> | null = null; // eslint-disable-line @typescript-eslint/no-explicit-any
+let freshClient: SupabaseClient<any, "blt"> | null = null; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+function credentials() {
+  // Accept the REST endpoint form too (".../rest/v1/"); supabase-js wants the bare project URL.
+  const url = process.env.SUPABASE_URL?.trim().replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, "");
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    throw new Error("SUPABASE_URL un SUPABASE_SERVICE_ROLE_KEY nav iestatīti (.env.local / Vercel env).");
+  }
+  return { url, key };
+}
 
 /**
  * Service-role client for the `blt` schema. Server-only: the key bypasses RLS and
@@ -16,12 +27,7 @@ let client: SupabaseClient<any, "blt"> | null = null; // eslint-disable-line @ty
  */
 export function db() {
   if (client) return client;
-  // Accept the REST endpoint form too (".../rest/v1/"); supabase-js wants the bare project URL.
-  const url = process.env.SUPABASE_URL?.trim().replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, "");
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
-    throw new Error("SUPABASE_URL un SUPABASE_SERVICE_ROLE_KEY nav iestatīti (.env.local / Vercel env).");
-  }
+  const { url, key } = credentials();
   client = createClient(url, key, {
     db: { schema: "blt" },
     auth: { persistSession: false, autoRefreshToken: false },
@@ -34,4 +40,16 @@ export function db() {
     },
   });
   return client;
+}
+
+/** Same as db() but never cached, for state that changes per request (login attempts). */
+export function dbFresh() {
+  if (freshClient) return freshClient;
+  const { url, key } = credentials();
+  freshClient = createClient(url, key, {
+    db: { schema: "blt" },
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }) },
+  });
+  return freshClient;
 }

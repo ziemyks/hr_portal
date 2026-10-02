@@ -5,8 +5,16 @@ import { Input } from "@/components/ui/input";
 
 export const metadata: Metadata = { title: "Pieslēgties" };
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; next?: string }> }) {
-  const { error, next } = await searchParams;
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; next?: string; wait?: string }> }) {
+  const { error, next, wait } = await searchParams;
+  const message =
+    error === "locked"
+      ? `Pārāk daudz neveiksmīgu mēģinājumu. Mēģiniet vēlreiz pēc ${Number(wait) || 1} min.`
+      : error === "unavailable"
+        ? "Pieslēgšanās īslaicīgi nav pieejama. Mēģiniet vēlreiz vēlāk."
+        : error
+          ? "Nepareiza parole. Mēģiniet vēlreiz."
+          : null;
   return (
     <main className="flex min-h-dvh items-center justify-center px-4">
       <form action="/api/login" method="post" className="w-full max-w-sm rounded-xl border border-border bg-surface p-6 shadow-sm">
@@ -24,9 +32,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           Parole
         </label>
         <Input id="password" name="password" type="password" autoComplete="current-password" required autoFocus aria-invalid={!!error} />
-        {error && (
+        {message && (
           <p role="alert" className="mt-2 text-xs text-danger">
-            Nepareiza parole. Mēģiniet vēlreiz.
+            {message}
           </p>
         )}
         <Button type="submit" variant="primary" className="mt-4 w-full justify-center">
