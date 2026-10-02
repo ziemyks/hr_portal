@@ -5,7 +5,8 @@ import { Check, ChevronDown, X } from "lucide-react";
 import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-const pillBase = "inline-flex h-8 shrink-0 items-center rounded-full border text-[13px] font-medium transition-colors";
+const pillBase = "inline-flex h-9 shrink-0 items-center rounded-full border text-[13px] font-medium transition-colors sm:h-8";
+const pillOnFirst = "max-sm:-order-1";
 const pillIdle = "border-border bg-surface text-fg-muted hover:border-border-strong hover:bg-surface-2 hover:text-fg";
 const pillOn = "border-accent/30 bg-accent-soft text-accent";
 
@@ -38,7 +39,7 @@ export function FilterPill({
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverAnchor asChild>
-        <div className={cn(pillBase, on ? pillOn : pillIdle, open && !on && "border-border-strong bg-surface-2 text-fg")}>
+        <div className={cn(pillBase, on ? cn(pillOn, pillOnFirst) : pillIdle, open && !on && "border-border-strong bg-surface-2 text-fg")}>
           <PopoverTrigger
             className={cn(
               "inline-flex h-full min-w-0 items-center gap-1.5 rounded-full pl-3 [&_svg]:size-3.5 [&_svg]:shrink-0",
@@ -82,7 +83,7 @@ export function TogglePill({ label, icon, pressed, onToggle }: { label: string; 
       type="button"
       aria-pressed={pressed}
       onClick={onToggle}
-      className={cn(pillBase, "gap-1.5 px-3 [&_svg]:size-3.5", pressed ? pillOn : pillIdle)}
+      className={cn(pillBase, "gap-1.5 px-3 [&_svg]:size-3.5", pressed ? cn(pillOn, pillOnFirst) : pillIdle)}
     >
       {icon}
       {label}

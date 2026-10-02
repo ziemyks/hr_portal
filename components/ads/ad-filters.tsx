@@ -110,7 +110,7 @@ export function AdFilters({
     <div className="relative rounded-xl border border-border bg-surface shadow-sm">
       {/* Top: search, status, sort, actions */}
       <div className="flex flex-wrap items-center gap-2 p-2">
-        <div className="relative min-w-0 flex-1 basis-full sm:basis-64">
+        <div className="relative min-w-0 flex-1 basis-0 sm:basis-64">
           {pending ? (
             <LoaderCircle className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-accent" />
           ) : (
@@ -126,7 +126,7 @@ export function AdFilters({
               setQ("");
               e.currentTarget.blur();
             }}
-            placeholder="Meklēt amatu, uzņēmumu, aprakstu…"
+            placeholder="Meklēt amatu…"
             aria-label="Meklēt sludinājumos"
             className="h-9 border-transparent bg-surface-2 pl-9 pr-9 hover:border-transparent focus-visible:bg-surface [&::-webkit-search-cancel-button]:hidden"
           />
@@ -144,7 +144,7 @@ export function AdFilters({
           )}
         </div>
 
-        <div role="group" aria-label="Statuss" className="inline-flex rounded-lg bg-surface-2 p-0.5">
+        <div role="group" aria-label="Statuss" className="inline-flex rounded-lg bg-surface-2 p-0.5 max-sm:order-last max-sm:w-full">
           {STATUS_TABS.map((t) => {
             const on = filters.status === t.key;
             return (
@@ -154,7 +154,7 @@ export function AdFilters({
                 aria-pressed={on}
                 onClick={() => push({ status: t.key })}
                 className={cn(
-                  "inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-[13px] font-medium transition-colors",
+                  "inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-3 text-[13px] font-medium transition-colors max-sm:flex-1",
                   on ? "bg-surface text-fg shadow-sm" : "text-fg-muted hover:text-fg",
                 )}
               >
@@ -165,9 +165,9 @@ export function AdFilters({
           })}
         </div>
 
-        <div className="ml-auto flex items-center gap-1">
+        <div className="flex items-center gap-0.5 sm:ml-auto sm:gap-1">
           <SortMenu value={filters.sort} onChange={(sort) => push({ sort })} />
-          <span aria-hidden className="mx-1 h-5 w-px bg-border" />
+          <span aria-hidden className="mx-1 hidden h-5 w-px bg-border sm:block" />
           <SaveViewButton query={query} />
           <a href={`/api/export${query}`} className={buttonClass("ghost", "sm")} download title="Eksportēt CSV">
             <Download /> <span className="hidden md:inline">CSV</span>
@@ -176,18 +176,22 @@ export function AdFilters({
       </div>
 
       {/* Bottom: filter pills */}
-      <div className="flex flex-wrap items-center gap-1.5 border-t border-border px-2 py-2">
+      <div className="flex flex-col gap-1 border-t border-border py-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-1.5 sm:px-2">
         <span className="mr-1 hidden items-center gap-1.5 pl-1 text-xs font-medium text-fg-subtle sm:inline-flex">
           <ListFilter className="size-3.5" /> Filtri
         </span>
-        {MULTI.map(({ key, label: l }) => (
-          <MultiSelect key={key} label={l} options={opts[key]} selected={filters[key]} onChange={(v) => push({ [key]: v })} />
-        ))}
-        <PublishedFilter filters={filters} onApply={push} />
-        <SalaryFilter filters={filters} onApply={push} />
-        <TogglePill label="Atkārtotie" icon={<Repeat />} pressed={filters.rep} onToggle={() => push({ rep: !filters.rep })} />
+        {/* Phones: one swipeable row (set filters first); wider screens: wraps inline. */}
+        <div className="no-scrollbar flex gap-1.5 overflow-x-auto px-2 py-0.5 [mask-image:linear-gradient(to_right,black_calc(100%-24px),transparent)] sm:contents">
+          {MULTI.map(({ key, label: l }) => (
+            <MultiSelect key={key} label={l} options={opts[key]} selected={filters[key]} onChange={(v) => push({ [key]: v })} />
+          ))}
+          <PublishedFilter filters={filters} onApply={push} />
+          <SalaryFilter filters={filters} onApply={push} />
+          <TogglePill label="Atkārtotie" icon={<Repeat />} pressed={filters.rep} onToggle={() => push({ rep: !filters.rep })} />
+          <span aria-hidden className="w-4 shrink-0 sm:hidden" />
+        </div>
 
-        <div className="ml-auto flex items-center gap-3 pl-2 text-xs">
+        <div className="flex min-h-7 items-center justify-between gap-3 px-3 text-xs sm:ml-auto sm:px-0 sm:pl-2">
           <span className={cn("tabular-nums text-fg-subtle transition-opacity", pending && "opacity-50")} aria-live="polite">
             {num(counts[filters.status])} sludinājumi
           </span>
@@ -221,7 +225,7 @@ function SortMenu({ value, onChange }: { value: Sort; onChange: (s: Sort) => voi
       <PopoverTrigger className={buttonClass("ghost", "sm")} aria-label={`Kārtot: ${SORT_LABELS[value]}`}>
         <ArrowUpDown />
         <span className="hidden text-fg-subtle lg:inline">Kārtot:</span>
-        <span className="text-fg">{SORT_LABELS[value]}</span>
+        <span className="hidden text-fg sm:inline">{SORT_LABELS[value]}</span>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-52">
         <div role="menu" aria-label="Kārtot">

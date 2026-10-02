@@ -20,9 +20,10 @@ export function Pagination({ filters, count }: { filters: AdFilters; count: numb
         <Link
           href={href(page - 1)}
           aria-disabled={page <= 1}
+          aria-label="Iepriekšējā lapa"
           className={cn(buttonClass("outline", "sm"), page <= 1 && "pointer-events-none opacity-40")}
         >
-          <ChevronLeft /> Iepriekšējā
+          <ChevronLeft /> <span className="hidden sm:inline">Iepriekšējā</span>
         </Link>
         <span className="px-2 tabular-nums">
           {page} / {pages}
@@ -30,9 +31,10 @@ export function Pagination({ filters, count }: { filters: AdFilters; count: numb
         <Link
           href={href(page + 1)}
           aria-disabled={page >= pages}
+          aria-label="Nākamā lapa"
           className={cn(buttonClass("outline", "sm"), page >= pages && "pointer-events-none opacity-40")}
         >
-          Nākamā <ChevronRight />
+          <span className="hidden sm:inline">Nākamā</span> <ChevronRight />
         </Link>
       </div>
     </nav>

@@ -53,7 +53,7 @@ export function AdHeader({ ad, compact }: { ad: Listing; compact?: boolean }) {
             {ad.company}
           </Link>
           {recruiter && <Badge tone="neutral" title="Sludinājumu publicējusi personāla atlases aģentūra; īstais darba devējs var būt minēts tekstā">aģentūra</Badge>}
-          {ad.town && <span className="text-fg-subtle">· {ad.town}</span>}
+          {ad.town && <span className="inline-flex items-center gap-1 whitespace-nowrap text-fg-subtle"><MapPin className="size-3.5" aria-hidden />{ad.town}</span>}
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-2">

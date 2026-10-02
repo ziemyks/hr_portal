@@ -196,7 +196,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             type="button"
             onClick={() => setMobileOpen(true)}
             aria-label="Atvērt izvēlni"
-            className="inline-flex size-8 items-center justify-center rounded-md text-fg-muted hover:bg-surface-2 md:hidden"
+            className="-ml-1 inline-flex size-9 items-center justify-center rounded-md text-fg-muted hover:bg-surface-2 md:hidden"
           >
             <Menu className="size-4" />
           </button>

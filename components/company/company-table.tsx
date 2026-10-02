@@ -16,7 +16,7 @@ type Key = "company" | "n_active" | "n" | "median_salary" | "avg_days_open" | "r
 const COLS: { key: Key; label: string; right?: boolean; hideSm?: boolean }[] = [
   { key: "company", label: "Uzņēmums" },
   { key: "n_active", label: "Aktīvi", right: true },
-  { key: "n", label: "Kopā", right: true },
+  { key: "n", label: "Kopā", right: true, hideSm: true },
   { key: "median_salary", label: "Mediānā alga", right: true },
   { key: "avg_days_open", label: "Vid. atvērts", right: true, hideSm: true },
   { key: "repeating_pct", label: "Atkārtoti", right: true, hideSm: true },
@@ -92,8 +92,8 @@ export function CompanyTable({ rows }: { rows: CompanyRow[] }) {
                   <span className="block text-xs text-fg-subtle">{catLabel(r.main_category)}</span>
                 </td>
                 <td className="px-3 py-2 text-right font-medium tabular-nums">{num(r.n_active)}</td>
-                <td className="px-3 py-2 text-right tabular-nums text-fg-muted">{num(r.n)}</td>
-                <td className="px-3 py-2 text-right tabular-nums">{r.median_salary != null ? `€ ${num(r.median_salary)}` : "—"}</td>
+                <td className="hidden px-3 py-2 text-right tabular-nums text-fg-muted sm:table-cell">{num(r.n)}</td>
+                <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums">{r.median_salary != null ? `€ ${num(r.median_salary)}` : "—"}</td>
                 <td className="hidden px-3 py-2 text-right tabular-nums text-fg-muted sm:table-cell">{r.avg_days_open != null ? `${num(r.avg_days_open)} d.` : "—"}</td>
                 <td className="hidden px-3 py-2 text-right tabular-nums text-fg-muted sm:table-cell">{r.n ? Math.round((r.n_repeating / r.n) * 100) : 0}%</td>
                 <td className="hidden px-3 py-2 text-right tabular-nums text-fg-muted sm:table-cell">{date(r.last_posted)}</td>

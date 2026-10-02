@@ -69,10 +69,10 @@ export default async function CompanyProfilePage({ searchParams }: Props) {
         <div className="min-w-0">
           <p className="text-xs font-medium uppercase tracking-wide text-fg-subtle">Uzņēmuma analīze</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight">{p.company}</h1>
-          <p className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-fg-muted">
+          <p className="mt-1.5 flex flex-wrap items-center gap-1.5 text-sm text-fg-muted">
             {p.categories.slice(0, 4).map((c) => <Badge key={c.key} tone="outline" className="font-normal">{catLabel(c.key)}</Badge>)}
-            <span className="text-fg-subtle">· sludinājumi kopš {date(k.first_seen)} · aprēķināts {dateTime(p.generated_at)}</span>
           </p>
+          <p className="mt-1.5 text-xs text-fg-subtle">Sludinājumi kopš {date(k.first_seen)} · aprēķināts {dateTime(p.generated_at)}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link href={`/ads${listQuery}`} className={buttonClass("outline", "sm")}><List /> Sludinājumu sarakstā</Link>
@@ -102,7 +102,7 @@ export default async function CompanyProfilePage({ searchParams }: Props) {
 
       <Insights p={p} salaryDiff={salaryDiff} repPct={repPct} />
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Card>
           <CardHeader title="Publicēšanas aktivitāte" description="Jauni sludinājumi pa nedēļām (pirmā publicēšana)" />
           <div className="p-4 pt-3"><WeeklyBars data={p.weekly} /></div>
@@ -113,7 +113,7 @@ export default async function CompanyProfilePage({ searchParams }: Props) {
         </Card>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Card>
           <CardHeader title="Prasmes" description="% no uzņēmuma sludinājumiem pret % tirgū (top 20)" action={<CompareLegend />} />
           <div className="p-4">
@@ -142,7 +142,7 @@ export default async function CompanyProfilePage({ searchParams }: Props) {
         </div>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
         <Mini title="Līmenis" legend>
           <CompareBars max={100} items={sortSen(p.seniority).map((s) => ({ key: s.key, label: label(SENIORITY, s.key), pct: s.pct, market_pct: s.market_pct, n: s.n }))} />
         </Mini>
@@ -154,7 +154,7 @@ export default async function CompanyProfilePage({ searchParams }: Props) {
         </Mini>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Card>
           <CardHeader title="Ko piedāvā (tēmas)" description="% sludinājumu, kuros labumos minēta tēma, pret tirgu" action={<CompareLegend />} />
           <div className="p-4">
@@ -175,7 +175,7 @@ export default async function CompanyProfilePage({ searchParams }: Props) {
         </Card>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader title="Līdzīgākie darba devēji" description="Konkurenti par talantiem: līdzīgs prasmju profils (kosinusa līdzība)" />
           <ul className="divide-y divide-border px-4 pb-2">
@@ -268,7 +268,7 @@ function Insights({ p, salaryDiff, repPct }: { p: CompanyProfile; salaryDiff: nu
   return (
     <Card>
       <CardHeader title={<span className="flex items-center gap-1.5"><Lightbulb className="size-4 text-fg-subtle" /> Galvenie secinājumi</span>} description="Automātiski no datiem; nelielam sludinājumu skaitam – orientējoši" />
-      <ul className="grid gap-x-8 gap-y-2 p-4 text-sm md:grid-cols-2">
+      <ul className="grid grid-cols-1 gap-x-8 gap-y-2 p-4 text-sm md:grid-cols-2">
         {out.map((x, i) => (
           <li key={i} className="flex gap-2">
             <span className="mt-2 size-1.5 shrink-0 rounded-full bg-accent" aria-hidden />

@@ -53,8 +53,8 @@ export function DashFiltersBar({ filters, facetCounts }: { filters: DashFilters;
   const rangeKey = !filters.from ? "all" : RANGES.find((r) => r.from != null && daysAgo(r.from) === filters.from)?.key ?? "custom";
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-border bg-surface p-2 shadow-sm">
-      <div className="mr-1 inline-flex rounded-lg bg-surface-2 p-0.5" role="group" aria-label="Periods (pirmā publicēšana)">
+    <div className="flex flex-col gap-2 rounded-xl border border-border bg-surface py-2 shadow-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-1.5 sm:px-2">
+      <div className="mx-2 inline-flex self-start rounded-lg sm:mx-0 sm:mr-1 bg-surface-2 p-0.5" role="group" aria-label="Periods (pirmā publicēšana)">
         {RANGES.map((r) => (
           <button
             key={r.key}
@@ -70,6 +70,7 @@ export function DashFiltersBar({ filters, facetCounts }: { filters: DashFilters;
           </button>
         ))}
       </div>
+      <div className="no-scrollbar flex gap-1.5 overflow-x-auto px-2 py-0.5 [mask-image:linear-gradient(to_right,black_calc(100%-24px),transparent)] sm:contents">
       {SELECTS.map(({ key, label: l }) => (
         <MultiSelect
           key={key}
@@ -80,6 +81,9 @@ export function DashFiltersBar({ filters, facetCounts }: { filters: DashFilters;
           onChange={(v) => push({ [key]: v[0] ?? null })}
         />
       ))}
+      <span aria-hidden className="w-4 shrink-0 sm:hidden" />
+      </div>
+      <div className="flex items-center justify-between gap-2 px-2 sm:contents">
       {(filters.cat || filters.sub || filters.sen || filters.town || filters.mode || filters.from) && (
         <Link href="/" scroll={false} className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs font-medium text-accent hover:bg-accent-soft">
           <X className="size-3.5" /> Notīrīt
@@ -88,6 +92,7 @@ export function DashFiltersBar({ filters, facetCounts }: { filters: DashFilters;
       <Link href={`/ads${dashToAdsQuery(filters)}`} className={buttonClass("ghost", "sm", "ml-auto text-accent hover:text-accent")}>
         Skatīt sludinājumus <ArrowRight />
       </Link>
+      </div>
     </div>
   );
 }

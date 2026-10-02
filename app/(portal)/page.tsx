@@ -52,7 +52,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             <StatTile label="Vid. atvērts" value={k.avg_days_open_active != null ? `${num(k.avg_days_open_active)} d.` : "—"} sub="aktīvajiem sludinājumiem" />
           </section>
 
-          <div className="grid gap-5 xl:grid-cols-5">
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-5">
             <Card className="xl:col-span-3">
               <CardHeader title="Aktīvo sludinājumu skaits laikā" description="Sludinājumi starp pirmo publicēšanu un termiņu katrā dienā" />
               <div className="p-4 pt-2">
@@ -77,7 +77,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             </Card>
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <Card>
               <CardHeader
                 title="Pieprasītākās prasmes"
@@ -104,7 +104,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             </div>
           </div>
 
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
             <MiniCard title="Darba veids">
               <BarList items={d.work_mode.map((r) => ({ key: r.key, label: label(WORK_MODE, r.key), n: r.n, href: r.key !== "UNKNOWN" ? ads({ status: "all", mode: [r.key] }) : undefined }))} />
             </MiniCard>
@@ -143,7 +143,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             </MiniCard>
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <Card>
               <CardHeader title="Aktīvākie darba devēji" description="Pēc aktīvo sludinājumu skaita" action={<Link href="/companies" className="text-xs text-accent hover:underline">Visi uzņēmumi</Link>} />
               <div className="overflow-x-auto p-4 pt-2">
@@ -193,7 +193,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Pr
             </Card>
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
             <Card>
               <CardHeader title="Beidzas drīz" description="Pieteikšanās termiņš nākamajās 7 dienās" action={<Link href={ads({ sort: "deadline" })} className="text-xs text-accent hover:underline">Visi</Link>} />
               <ul className="divide-y divide-border px-4 pb-2">
