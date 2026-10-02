@@ -76,3 +76,19 @@ export function repeatTooltip(r: { times_posted?: number | null; times_renewed?:
 
 export const pct = (a: number, b: number) => (b ? Math.round((a / b) * 100) : 0);
 
+
+/** Duration as "45 min", "3 h 10 min", "2 d. 4 h". */
+export function duration(ms: number) {
+  const m = Math.max(0, Math.floor(ms / 60000));
+  if (m < 1) return "< 1 min";
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return m % 60 ? `${h} h ${m % 60} min` : `${h} h`;
+  const d = Math.floor(h / 24);
+  return h % 24 ? `${d} d. ${h % 24} h` : `${d} d.`;
+}
+
+/** Riga weekday + time, e.g. "pirmd., 09:00". */
+export function weekdayTime(v: string) {
+  return new Intl.DateTimeFormat("lv-LV", { timeZone: TZ, weekday: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(v));
+}

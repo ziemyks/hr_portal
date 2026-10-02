@@ -4,7 +4,7 @@ import { Command } from "cmdk";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { Bookmark, Building2, CircleCheck, FileText, LayoutDashboard, List, Loader2, Palette, Repeat, Star, Wrench } from "lucide-react";
+import { Activity, Bookmark, Building2, CircleCheck, FileText, LayoutDashboard, List, Loader2, Palette, Repeat, Star, Wrench } from "lucide-react";
 import { adsByIdsAction, paletteFacetsAction, searchAdsAction } from "@/app/actions";
 import { useCommand } from "@/components/providers";
 import { Dialog } from "@/components/ui/dialog";
@@ -181,6 +181,9 @@ export function CommandMenu() {
                 </Command.Item>
                 <Command.Item value="nav-fav" onSelect={() => go("/favourites")} className={itemCls}>
                   <Star /> Izlase
+                </Command.Item>
+                <Command.Item value="nav-status" onSelect={() => go("/status")} className={itemCls}>
+                  <Activity /> Datu statuss
                 </Command.Item>
               </Command.Group>
               <Command.Group heading="Darbības" className={groupCls}>
