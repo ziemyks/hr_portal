@@ -1,91 +1,88 @@
 "use client";
 
 import { Command } from "cmdk";
-import { Check, ChevronDown } from "lucide-react";
-import { useState } from "react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { FilterPill } from "./filter-pill";
 import { cn } from "@/lib/utils";
 
 export type Option = { value: string; label: string; n?: number };
 
+/** Faceted filter pill. `single` = pick one value (closes on select). */
 export function MultiSelect({
   label,
+  icon,
   options,
   selected,
   onChange,
+  single = false,
   searchable = options.length > 8,
 }: {
   label: string;
+  icon?: ReactNode;
   options: Option[];
   selected: string[];
   onChange: (values: string[]) => void;
+  single?: boolean;
   searchable?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const toggle = (v: string) => onChange(selected.includes(v) ? selected.filter((x) => x !== v) : [...selected, v]);
+  const toggle = (v: string) => {
+    if (single) {
+      setOpen(false);
+      onChange(selected.includes(v) ? [] : [v]);
+    } else onChange(selected.includes(v) ? selected.filter((x) => x !== v) : [...selected, v]);
+  };
   const count = selected.length;
+  const labelOf = (v: string) => options.find((o) => o.value === v)?.label ?? v;
+  const summary = count === 0 ? null : count === 1 ? labelOf(selected[0]) : `${labelOf(selected[0])} +${count - 1}`;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        className={cn(
-          "inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-[13px] font-medium transition-colors",
-          count
-            ? "border-accent/40 bg-accent-soft text-accent"
-            : "border-dashed border-border-strong bg-surface text-fg-muted hover:border-solid hover:text-fg",
+    <FilterPill label={label} icon={icon} summary={summary} onClear={() => onChange([])} open={open} onOpenChange={setOpen}>
+      <Command loop>
+        {searchable && (
+          <Command.Input
+            placeholder={`Meklēt: ${label.toLowerCase()}…`}
+            className="mb-1 h-9 w-full border-b border-border bg-transparent px-2.5 text-sm outline-none placeholder:text-fg-subtle"
+          />
         )}
-      >
-        {label}
-        {count > 0 && (
-          <span className="rounded bg-accent px-1 text-[11px] leading-4 text-accent-fg tabular-nums">{count}</span>
-        )}
-        <ChevronDown className="size-3.5 opacity-60" />
-      </PopoverTrigger>
-      <PopoverContent>
-        <Command loop>
-          {searchable && (
-            <Command.Input
-              placeholder={`Meklēt: ${label.toLowerCase()}…`}
-              className="mb-1 h-9 w-full rounded-md border-b border-border bg-transparent px-2.5 text-sm outline-none placeholder:text-fg-subtle"
-            />
-          )}
-          <Command.List className="max-h-72 overflow-y-auto">
-            <Command.Empty className="px-2.5 py-6 text-center text-xs text-fg-subtle">Nav atbilstību</Command.Empty>
-            {options.map((o) => {
-              const on = selected.includes(o.value);
-              return (
-                <Command.Item
-                  key={o.value}
-                  value={`${o.label} ${o.value}`}
-                  onSelect={() => toggle(o.value)}
-                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-fg-muted aria-selected:bg-surface-2 aria-selected:text-fg"
+        <Command.List className="max-h-72 overflow-y-auto">
+          <Command.Empty className="px-2.5 py-6 text-center text-xs text-fg-subtle">Nav atbilstību</Command.Empty>
+          {options.map((o) => {
+            const on = selected.includes(o.value);
+            return (
+              <Command.Item
+                key={o.value}
+                value={`${o.label} ${o.value}`}
+                onSelect={() => toggle(o.value)}
+                className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-fg-muted aria-selected:bg-surface-2 aria-selected:text-fg"
+              >
+                <span
+                  className={cn(
+                    "flex size-4 shrink-0 items-center justify-center border",
+                    single ? "rounded-full" : "rounded",
+                    on ? "border-accent bg-accent text-accent-fg" : "border-border-strong",
+                  )}
+                  aria-hidden
                 >
-                  <span
-                    className={cn(
-                      "flex size-4 shrink-0 items-center justify-center rounded border",
-                      on ? "border-accent bg-accent text-accent-fg" : "border-border-strong",
-                    )}
-                    aria-hidden
-                  >
-                    {on && <Check className="size-3" />}
-                  </span>
-                  <span className="flex-1 truncate">{o.label}</span>
-                  {o.n != null && <span className="text-xs tabular-nums text-fg-subtle">{o.n}</span>}
-                </Command.Item>
-              );
-            })}
-          </Command.List>
-        </Command>
-        {count > 0 && (
-          <button
-            type="button"
-            onClick={() => onChange([])}
-            className="mt-1 w-full rounded-md border-t border-border px-2 py-1.5 text-center text-xs text-fg-muted hover:bg-surface-2"
-          >
-            Notīrīt izvēli
-          </button>
-        )}
-      </PopoverContent>
-    </Popover>
+                  {on && <Check className="size-3" />}
+                </span>
+                <span className={cn("flex-1 truncate", on && "font-medium text-fg")}>{o.label}</span>
+                {o.n != null && <span className="text-xs tabular-nums text-fg-subtle">{o.n}</span>}
+              </Command.Item>
+            );
+          })}
+        </Command.List>
+      </Command>
+      {count > 0 && (
+        <button
+          type="button"
+          onClick={() => onChange([])}
+          className="mt-1 w-full rounded-md border-t border-border px-2 py-1.5 text-center text-xs text-fg-muted hover:bg-surface-2"
+        >
+          Notīrīt izvēli
+        </button>
+      )}
+    </FilterPill>
   );
 }

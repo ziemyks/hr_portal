@@ -1,12 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { BookmarkPlus, CalendarClock, Check, ChevronDown, Download, Repeat, Search, SlidersHorizontal, X } from "lucide-react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { ArrowUpDown, BookmarkPlus, CalendarClock, Check, Download, Euro, ListFilter, LoaderCircle, Repeat, Search, X } from "lucide-react";
 import { MultiSelect, type Option } from "./multi-select";
+import { FilterPill, MenuOption, TogglePill } from "./filter-pill";
 import { Button, buttonClass } from "@/components/ui/button";
-import { Input, Select } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
+import { Kbd } from "@/components/ui/kbd";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { activeFilterCount, MULTI_KEYS, RECENT_DAYS, toQuery, type AdFilters, type MultiKey, type Sort, type Status } from "@/lib/filters";
 import { catLabel, label, langLabel, SENIORITY, WORK_MODE } from "@/lib/labels";
@@ -29,6 +30,19 @@ const STATUS_TABS: { key: Status; label: string }[] = [
   { key: "all", label: "Visi" },
 ];
 
+const MULTI: { key: MultiKey; label: string }[] = [
+  { key: "cat", label: "Kategorija" },
+  { key: "sub", label: "Apakškategorija" },
+  { key: "company", label: "Uzņēmums" },
+  { key: "town", label: "Pilsēta" },
+  { key: "mode", label: "Darba veids" },
+  { key: "sen", label: "Līmenis" },
+  { key: "skill", label: "Prasmes" },
+  { key: "lang", label: "Valodas" },
+];
+
+const SALARY_PRESETS = [1500, 2000, 3000, 4000];
+
 export function AdFilters({
   filters,
   facetCounts,
@@ -41,11 +55,13 @@ export function AdFilters({
   counts: { active: number; inactive: number; all: number };
 }) {
   const router = useRouter();
+  const [pending, startTransition] = useTransition();
   const [q, setQ] = useState(filters.q);
   const first = useRef(true);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const push = (patch: Partial<AdFilters>) =>
-    router.push(`/ads${toQuery({ ...filters, ...patch, page: patch.page ?? 1 })}`, { scroll: false });
+    startTransition(() => router.push(`/ads${toQuery({ ...filters, ...patch, page: patch.page ?? 1 })}`, { scroll: false }));
 
   // Debounced search → URL.
   useEffect(() => {
@@ -59,6 +75,18 @@ export function AdFilters({
     return () => clearTimeout(t);
   }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => setQ(filters.q), [filters.q]);
+
+  // "/" focuses the search (unless already typing somewhere).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement;
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+      e.preventDefault();
+      searchRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // Options = values still available under the other filters, most frequent first.
   const labelOf: Record<MultiKey, (v: string) => string> = {
@@ -75,184 +103,261 @@ export function AdFilters({
     MULTI_KEYS.map((k) => [k, facetCounts[k].map((o) => ({ value: o.value, label: labelOf[k](o.value), n: o.n }))]),
   ) as Record<MultiKey, Option[]>;
 
-  const MULTI: { key: MultiKey; label: string }[] = [
-    { key: "cat", label: "Kategorija" },
-    { key: "sub", label: "Apakškategorija" },
-    { key: "company", label: "Uzņēmums" },
-    { key: "town", label: "Pilsēta" },
-    { key: "mode", label: "Darba veids" },
-    { key: "sen", label: "Līmenis" },
-    { key: "skill", label: "Prasmes" },
-    { key: "lang", label: "Valodas" },
-  ];
-
-  const labelFor = (key: MultiKey, v: string) => opts[key].find((o) => o.value === v)?.label ?? v;
-
-  const chips: { id: string; text: string; clear: Partial<AdFilters> }[] = [];
-  if (filters.q) chips.push({ id: "q", text: `„${filters.q}”`, clear: { q: "" } });
-  for (const { key, label: l } of MULTI)
-    for (const v of filters[key])
-      chips.push({ id: `${key}:${v}`, text: `${l}: ${labelFor(key, v)}`, clear: { [key]: filters[key].filter((x) => x !== v) } });
-  if (filters.smin != null) chips.push({ id: "smin", text: `Alga ≥ € ${num(filters.smin)}`, clear: { smin: null } });
-  if (filters.smax != null) chips.push({ id: "smax", text: `Alga ≤ € ${num(filters.smax)}`, clear: { smax: null } });
-  if (filters.rep) chips.push({ id: "rep", text: "Tikai atkārtotie", clear: { rep: false } });
-  if (filters.recent) chips.push({ id: "new", text: `Publicēts pēdējās ${recentLabel(filters.recent)}`, clear: { recent: null } });
-  if (filters.from) chips.push({ id: "from", text: `Publicēts no ${date(filters.from)}`, clear: { from: null } });
-  if (filters.to) chips.push({ id: "to", text: `Publicēts līdz ${date(filters.to)}`, clear: { to: null } });
-
-  const extraCount = (filters.smin != null ? 1 : 0) + (filters.smax != null ? 1 : 0) + (filters.from ? 1 : 0) + (filters.to ? 1 : 0);
+  const active = activeFilterCount(filters);
   const query = toQuery({ ...filters, page: 1 });
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <nav aria-label="Statuss" className="inline-flex rounded-lg bg-surface-2 p-0.5">
+    <div className="relative rounded-xl border border-border bg-surface shadow-sm">
+      {/* Top: search, status, sort, actions */}
+      <div className="flex flex-wrap items-center gap-2 p-2">
+        <div className="relative min-w-0 flex-1 basis-full sm:basis-64">
+          {pending ? (
+            <LoaderCircle className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-accent" />
+          ) : (
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-subtle" />
+          )}
+          <Input
+            ref={searchRef}
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key !== "Escape") return;
+              setQ("");
+              e.currentTarget.blur();
+            }}
+            placeholder="Meklēt amatu, uzņēmumu, aprakstu…"
+            aria-label="Meklēt sludinājumos"
+            className="h-9 border-transparent bg-surface-2 pl-9 pr-9 hover:border-transparent focus-visible:bg-surface [&::-webkit-search-cancel-button]:hidden"
+          />
+          {q ? (
+            <button
+              type="button"
+              onClick={() => setQ("")}
+              aria-label="Notīrīt meklēšanu"
+              className="absolute right-2 top-1/2 flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-fg-subtle hover:bg-surface-3 hover:text-fg"
+            >
+              <X className="size-3.5" />
+            </button>
+          ) : (
+            <Kbd className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 sm:inline-flex">/</Kbd>
+          )}
+        </div>
+
+        <div role="group" aria-label="Statuss" className="inline-flex rounded-lg bg-surface-2 p-0.5">
           {STATUS_TABS.map((t) => {
             const on = filters.status === t.key;
             return (
-              <Link
+              <button
                 key={t.key}
-                href={`/ads${toQuery({ ...filters, status: t.key, page: 1 })}`}
-                scroll={false}
-                aria-current={on ? "page" : undefined}
+                type="button"
+                aria-pressed={on}
+                onClick={() => push({ status: t.key })}
                 className={cn(
-                  "inline-flex h-7 items-center gap-1.5 rounded-md px-3 text-[13px] font-medium transition-colors",
+                  "inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-[13px] font-medium transition-colors",
                   on ? "bg-surface text-fg shadow-sm" : "text-fg-muted hover:text-fg",
                 )}
               >
                 {t.label}
-                <span className="text-xs tabular-nums text-fg-subtle">{num(counts[t.key])}</span>
-              </Link>
+                <span className={cn("text-xs tabular-nums", on ? "text-fg-muted" : "text-fg-subtle")}>{num(counts[t.key])}</span>
+              </button>
             );
           })}
-        </nav>
-        <div className="flex flex-wrap items-center gap-2">
-          <label className="sr-only" htmlFor="sort">Kārtot</label>
-          <Select id="sort" value={filters.sort} onChange={(e) => push({ sort: e.target.value as Sort })} className="h-8 w-auto text-[13px]">
-            {Object.entries(SORT_LABELS).map(([k, v]) => (
-              <option key={k} value={k}>{v}</option>
-            ))}
-          </Select>
+        </div>
+
+        <div className="ml-auto flex items-center gap-1">
+          <SortMenu value={filters.sort} onChange={(sort) => push({ sort })} />
+          <span aria-hidden className="mx-1 h-5 w-px bg-border" />
           <SaveViewButton query={query} />
-          <a href={`/api/export${query}`} className={buttonClass("outline", "sm")} download>
-            <Download /> CSV
+          <a href={`/api/export${query}`} className={buttonClass("ghost", "sm")} download title="Eksportēt CSV">
+            <Download /> <span className="hidden md:inline">CSV</span>
           </a>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative w-full sm:w-64">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-fg-subtle" />
-          <Input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Amats, uzņēmums, apraksts…"
-            aria-label="Meklēt sludinājumos"
-            className="h-8 pl-8 text-[13px]"
-          />
-        </div>
+      {/* Bottom: filter pills */}
+      <div className="flex flex-wrap items-center gap-1.5 border-t border-border px-2 py-2">
+        <span className="mr-1 hidden items-center gap-1.5 pl-1 text-xs font-medium text-fg-subtle sm:inline-flex">
+          <ListFilter className="size-3.5" /> Filtri
+        </span>
         {MULTI.map(({ key, label: l }) => (
           <MultiSelect key={key} label={l} options={opts[key]} selected={filters[key]} onChange={(v) => push({ [key]: v })} />
         ))}
-        <button
-          type="button"
-          aria-pressed={filters.rep}
-          onClick={() => push({ rep: !filters.rep })}
-          className={cn(
-            "inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-[13px] font-medium transition-colors",
-            filters.rep ? "border-accent/40 bg-accent-soft text-accent" : "border-dashed border-border-strong text-fg-muted hover:border-solid hover:text-fg",
-          )}
-        >
-          <Repeat className="size-3.5" /> Atkārtotie
-        </button>
-        <RecentFilter value={filters.recent} onChange={(recent) => push({ recent })} />
-        <MoreFilters filters={filters} onApply={push} count={extraCount} />
-      </div>
+        <PublishedFilter filters={filters} onApply={push} />
+        <SalaryFilter filters={filters} onApply={push} />
+        <TogglePill label="Atkārtotie" icon={<Repeat />} pressed={filters.rep} onToggle={() => push({ rep: !filters.rep })} />
 
-      {chips.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          {chips.map((c) => (
+        <div className="ml-auto flex items-center gap-3 pl-2 text-xs">
+          <span className={cn("tabular-nums text-fg-subtle transition-opacity", pending && "opacity-50")} aria-live="polite">
+            {num(counts[filters.status])} sludinājumi
+          </span>
+          {active > 0 && (
             <button
-              key={c.id}
               type="button"
-              onClick={() => push(c.clear)}
-              className="inline-flex h-6 items-center gap-1 rounded-md bg-surface-2 pl-2 pr-1 text-xs text-fg-muted hover:bg-surface-3 hover:text-fg"
-              aria-label={`Noņemt filtru ${c.text}`}
+              onClick={() => {
+                setQ("");
+                startTransition(() => router.push(`/ads${toQuery({ status: filters.status, sort: filters.sort })}`, { scroll: false }));
+              }}
+              className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 font-medium text-accent hover:bg-accent-soft"
             >
-              {c.text}
-              <X className="size-3" />
+              <X className="size-3.5" /> Notīrīt ({active})
             </button>
-          ))}
-          {activeFilterCount(filters) > 1 && (
-            <Link href={`/ads${toQuery({ status: filters.status, sort: filters.sort })}`} scroll={false} className="px-1 text-xs font-medium text-accent hover:underline">
-              Notīrīt visu
-            </Link>
           )}
         </div>
-      )}
+      </div>
+
+      {/* Loading bar while the server re-renders the list */}
+      <div aria-hidden className={cn("absolute inset-x-3 -bottom-px h-0.5 overflow-hidden rounded-full transition-opacity", pending ? "opacity-100" : "opacity-0")}>
+        <div className="h-full w-1/3 animate-[loading-bar_1s_ease-in-out_infinite] rounded-full bg-accent" />
+      </div>
     </div>
   );
 }
 
-function MoreFilters({ filters, onApply, count }: { filters: AdFilters; onApply: (p: Partial<AdFilters>) => void; count: number }) {
+function SortMenu({ value, onChange }: { value: Sort; onChange: (s: Sort) => void }) {
   const [open, setOpen] = useState(false);
-  const [v, setV] = useState({ smin: "", smax: "", from: "", to: "" });
-  useEffect(() => {
-    if (open)
-      setV({
-        smin: filters.smin?.toString() ?? "",
-        smax: filters.smax?.toString() ?? "",
-        from: filters.from ?? "",
-        to: filters.to ?? "",
-      });
-  }, [open, filters]);
-  const n = (s: string) => (s && /^\d+$/.test(s) ? Number(s) : null);
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        className={cn(
-          "inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-[13px] font-medium",
-          count ? "border-accent/40 bg-accent-soft text-accent" : "border-dashed border-border-strong text-fg-muted hover:border-solid hover:text-fg",
-        )}
-      >
-        <SlidersHorizontal className="size-3.5" /> Vairāk
-        {count > 0 && <span className="rounded bg-accent px-1 text-[11px] leading-4 text-accent-fg">{count}</span>}
+      <PopoverTrigger className={buttonClass("ghost", "sm")} aria-label={`Kārtot: ${SORT_LABELS[value]}`}>
+        <ArrowUpDown />
+        <span className="hidden text-fg-subtle lg:inline">Kārtot:</span>
+        <span className="text-fg">{SORT_LABELS[value]}</span>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-3">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            onApply({ smin: n(v.smin), smax: n(v.smax), from: v.from || null, to: v.to || null });
-            setOpen(false);
-          }}
-          className="space-y-3"
-        >
-          <fieldset>
-            <legend className="mb-1.5 text-xs font-medium text-fg-muted">Mēnešalga (vidējā, € bruto)</legend>
-            <div className="flex items-center gap-2">
-              <Input inputMode="numeric" placeholder="no" value={v.smin} onChange={(e) => setV({ ...v, smin: e.target.value })} aria-label="Alga no" className="h-8" />
-              <span className="text-fg-subtle">–</span>
-              <Input inputMode="numeric" placeholder="līdz" value={v.smax} onChange={(e) => setV({ ...v, smax: e.target.value })} aria-label="Alga līdz" className="h-8" />
-            </div>
-            <p className="mt-1 text-[11px] text-fg-subtle">Stundas likmes sludinājumi netiek iekļauti.</p>
-          </fieldset>
-          <fieldset>
-            <legend className="mb-1.5 text-xs font-medium text-fg-muted">Pirmo reizi publicēts</legend>
-            <div className="flex items-center gap-2">
-              <Input type="date" value={v.from} onChange={(e) => setV({ ...v, from: e.target.value })} aria-label="Publicēts no" className="h-8" />
-              <span className="text-fg-subtle">–</span>
-              <Input type="date" value={v.to} onChange={(e) => setV({ ...v, to: e.target.value })} aria-label="Publicēts līdz" className="h-8" />
-            </div>
-          </fieldset>
-          <div className="flex justify-end gap-2">
-            <Button type="button" size="sm" variant="ghost" onClick={() => setV({ smin: "", smax: "", from: "", to: "" })}>
-              Notīrīt
-            </Button>
-            <Button type="submit" size="sm" variant="primary">Lietot</Button>
-          </div>
-        </form>
+      <PopoverContent align="end" className="w-52">
+        <div role="menu" aria-label="Kārtot">
+          {(Object.keys(SORT_LABELS) as Sort[]).map((k) => (
+            <MenuOption key={k} selected={k === value} onSelect={() => (setOpen(false), onChange(k))}>
+              {SORT_LABELS[k]}
+            </MenuOption>
+          ))}
+        </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+/** Short day.month for pill summaries. */
+const dm = (v: string) => date(v).slice(0, 6);
+
+/** "Publicēts": relative presets (stay current in saved views) or a custom first-published range. */
+function PublishedFilter({ filters, onApply }: { filters: AdFilters; onApply: (p: Partial<AdFilters>) => void }) {
+  const [open, setOpen] = useState(false);
+  const [v, setV] = useState({ from: "", to: "" });
+  useEffect(() => {
+    if (open) setV({ from: filters.from ?? "", to: filters.to ?? "" });
+  }, [open, filters.from, filters.to]);
+
+  const range = filters.from && filters.to ? `${dm(filters.from)}–${dm(filters.to)}` : filters.from ? `no ${dm(filters.from)}` : filters.to ? `līdz ${dm(filters.to)}` : null;
+  const summary = [filters.recent ? (filters.recent === 1 ? "24 h" : `${filters.recent} d.`) : null, range].filter(Boolean).join(", ") || null;
+  const presets: { v: number | null; text: string }[] = [
+    { v: null, text: "Jebkad" },
+    ...RECENT_DAYS.map((d) => ({ v: d, text: d === 1 ? "Pēdējās 24 h" : `Pēdējās ${d} dienās` })),
+  ];
+
+  return (
+    <FilterPill
+      label="Publicēts"
+      icon={<CalendarClock />}
+      summary={summary}
+      onClear={() => onApply({ recent: null, from: null, to: null })}
+      open={open}
+      onOpenChange={setOpen}
+      contentClassName="w-64"
+    >
+      <div role="menu" aria-label="Publicēts">
+        {presets.map((o) => (
+          <MenuOption
+            key={o.text}
+            selected={o.v === filters.recent && !filters.from && !filters.to}
+            onSelect={() => (setOpen(false), onApply({ recent: o.v, from: null, to: null }))}
+          >
+            {o.text}
+          </MenuOption>
+        ))}
+      </div>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          setOpen(false);
+          onApply({ recent: null, from: v.from || null, to: v.to || null });
+        }}
+        className="mt-1 space-y-2 border-t border-border p-2"
+      >
+        <p className="text-xs font-medium text-fg-muted">Pielāgots periods</p>
+        <div className="grid grid-cols-2 gap-2">
+          <Input type="date" value={v.from} max={v.to || undefined} onChange={(e) => setV({ ...v, from: e.target.value })} aria-label="Publicēts no" className="h-8 px-2 text-xs" />
+          <Input type="date" value={v.to} min={v.from || undefined} onChange={(e) => setV({ ...v, to: e.target.value })} aria-label="Publicēts līdz" className="h-8 px-2 text-xs" />
+        </div>
+        <Button type="submit" size="sm" variant="primary" className="w-full justify-center" disabled={!v.from && !v.to}>
+          Lietot periodu
+        </Button>
+      </form>
+    </FilterPill>
+  );
+}
+
+function SalaryFilter({ filters, onApply }: { filters: AdFilters; onApply: (p: Partial<AdFilters>) => void }) {
+  const [open, setOpen] = useState(false);
+  const [v, setV] = useState({ smin: "", smax: "" });
+  useEffect(() => {
+    if (open) setV({ smin: filters.smin?.toString() ?? "", smax: filters.smax?.toString() ?? "" });
+  }, [open, filters.smin, filters.smax]);
+  const n = (s: string) => (s && /^\d+$/.test(s) ? Number(s) : null);
+
+  const { smin, smax } = filters;
+  const summary =
+    smin != null && smax != null ? `€ ${num(smin)}–${num(smax)}` : smin != null ? `≥ € ${num(smin)}` : smax != null ? `≤ € ${num(smax)}` : null;
+
+  return (
+    <FilterPill
+      label="Alga"
+      icon={<Euro />}
+      summary={summary}
+      onClear={() => onApply({ smin: null, smax: null })}
+      open={open}
+      onOpenChange={setOpen}
+      contentClassName="w-72 p-3"
+    >
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          setOpen(false);
+          onApply({ smin: n(v.smin), smax: n(v.smax) });
+        }}
+        className="space-y-3"
+      >
+        <div>
+          <p className="mb-1.5 text-xs font-medium text-fg-muted">Mēnešalga (vidējā, € bruto)</p>
+          <div className="flex flex-wrap gap-1.5">
+            {SALARY_PRESETS.map((p) => {
+              const on = smin === p && smax == null;
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => (setOpen(false), onApply({ smin: p, smax: null }))}
+                  className={cn(
+                    "inline-flex h-7 items-center gap-1 rounded-full border px-2.5 text-xs font-medium tabular-nums transition-colors",
+                    on ? "border-accent/30 bg-accent-soft text-accent" : "border-border text-fg-muted hover:bg-surface-2 hover:text-fg",
+                  )}
+                >
+                  {on && <Check className="size-3" />}≥ {num(p)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Input inputMode="numeric" placeholder="no" value={v.smin} onChange={(e) => setV({ ...v, smin: e.target.value })} aria-label="Alga no" className="h-8" />
+          <span className="text-fg-subtle">–</span>
+          <Input inputMode="numeric" placeholder="līdz" value={v.smax} onChange={(e) => setV({ ...v, smax: e.target.value })} aria-label="Alga līdz" className="h-8" />
+        </div>
+        <p className="text-[11px] text-fg-subtle">Stundas likmes sludinājumi netiek iekļauti.</p>
+        <Button type="submit" size="sm" variant="primary" className="w-full justify-center">
+          Lietot
+        </Button>
+      </form>
+    </FilterPill>
   );
 }
 
@@ -262,8 +367,8 @@ function SaveViewButton({ query }: { query: string }) {
   const [saved, setSaved] = useState(false);
   return (
     <Popover open={open} onOpenChange={(o) => { setOpen(o); setSaved(false); }}>
-      <PopoverTrigger className={buttonClass("outline", "sm")}>
-        <BookmarkPlus /> Saglabāt skatu
+      <PopoverTrigger className={buttonClass("ghost", "sm")} title="Saglabāt skatu">
+        <BookmarkPlus /> <span className="hidden md:inline">Saglabāt skatu</span>
       </PopoverTrigger>
       <PopoverContent align="end" className="p-3">
         {saved ? (
@@ -286,55 +391,6 @@ function SaveViewButton({ query }: { query: string }) {
             </div>
           </form>
         )}
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-const recentLabel = (d: number) => (d === 1 ? "24 h" : `${d} dienās`);
-
-/** Quick "published in the last N days" filter (relative, so saved views stay current). */
-function RecentFilter({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
-  const [open, setOpen] = useState(false);
-  const opts: { v: number | null; text: string }[] = [
-    { v: null, text: "Jebkad" },
-    ...RECENT_DAYS.map((d) => ({ v: d, text: d === 1 ? "Pēdējās 24 h" : `Pēdējās ${d} dienās` })),
-  ];
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        className={cn(
-          "inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-[13px] font-medium transition-colors",
-          value ? "border-accent/40 bg-accent-soft text-accent" : "border-dashed border-border-strong text-fg-muted hover:border-solid hover:text-fg",
-        )}
-      >
-        <CalendarClock className="size-3.5" />
-        {value ? `Publicēts: ${value === 1 ? "24 h" : `${value} d.`}` : "Publicēts"}
-        <ChevronDown className="size-3.5 opacity-60" />
-      </PopoverTrigger>
-      <PopoverContent className="w-52">
-        <ul role="listbox" aria-label="Publicēts">
-          {opts.map((o) => {
-            const on = o.v === value;
-            return (
-              <li key={o.text}>
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={on}
-                  onClick={() => {
-                    setOpen(false);
-                    onChange(o.v);
-                  }}
-                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] text-fg-muted hover:bg-surface-2 hover:text-fg"
-                >
-                  <span className="flex size-4 items-center justify-center">{on && <Check className="size-3.5 text-accent" />}</span>
-                  {o.text}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
       </PopoverContent>
     </Popover>
   );
